@@ -1,8 +1,9 @@
 {
   "name": "fma-snes65816",
   "version": "0.5.1",
-  "description": "",
+  "description": "SNES 65816 assembler backend for FMA",
   "main": "dist/index.js",
+  "keywords": ["snes", "famicom", "macro", "assembler", "compiler", "nintendo"],
   "scripts": {
     "prepublish": "npm run build",
     "build": "node_modules/babel-cli/bin/babel.js src --source-maps --out-dir ./dist"
@@ -17,8 +18,16 @@
   },
   "dependencies": {
     "babel-runtime": "^6.26.0",
-    "fma": "file:../fma"
+    "fma": "^0.2.1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BenjaminSchulte/fma-snes65816.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BenjaminSchulte/fma-snes65816/issues"
+  },
+  "homepage": "https://github.com/BenjaminSchulte/fma-snes65816#readme",
   "author": "Benjamin Schulte <benj@minschulte.de>",
   "license": "MIT"
 }

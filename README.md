@@ -1,7 +1,8 @@
 FMA SNES 65816
 ==============
 
-SNES 65816 assembler plugin for FMA assembler.
+SNES 65816 assembler plugin for FMA assembler. See `fma-cli` package for
+further details.
 
 
 License
