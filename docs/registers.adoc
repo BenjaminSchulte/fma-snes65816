@@ -1,0 +1,67 @@
+65816 registers
+===============
+
+FMA defines all registers as a class instance of the class `Register`. The registers can simply accessed using their names.
+
+
+== Parameter checking
+
+You can check if a variable is a register or not by using the member methods:
+
+* `variable.A?` - returns whether the variable is the register A
+* `variable.X?` - returns whether the variable is the register X
+* `variable.Y?` - returns whether the variable is the register Y
+
+A great example is a macro with an optional variable:
+
+[source,ruby]
+----
+macro set_inidisp(value)
+  LDA #value unless value.A?
+  STA $2100
+end
+
+set_inidisp $80
+
+LDA #$1F
+set_inidisp A
+----
+
+
+== Register size
+
+The 65816 allows to configure the A, X and Y register to be configured in 8 bit
+or 16 bit mode. FMA tries to keep track about the size automatically.
+
+You can always check the current register size using the register macro:
+
+* `A.size_8?` - returns true, if the register is 8 bit
+* `A.size_16?` - returns true, if the register is 16 bit
+
+If the automatically size guessing fails for any reason you can still set the
+size manually:
+
+* `A.set_size 8`
+* `A.set_size 16`
+
+
+A great example could be a macro which sets the register size to a safe
+state:
+
+[source,ruby]
+----
+macro with_register_size(size)
+  return yield if A.size == size
+
+  SEP $20 if size == 8
+  REP $20 if size == 16
+  yield
+  REP $20 if size == 8
+  SEP $20 if size == 16
+end
+
+with_register_size 8 do
+  set_inidisp $1F
+end
+
+----

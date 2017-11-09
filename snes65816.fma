@@ -26,6 +26,22 @@ class CompilerMemoryManager
 
     self.shadow_range range, address_and, address_or, modify_add, modify_and, modify_or
   end
+
+  macro dp
+    self.to_future_number.dp
+  end
+
+  macro long_address
+    self.to_future_number.long_address
+  end
+
+  macro indirect
+    self.to_future_number.indirect
+  end
+
+  macro long_indirect
+    self.to_future_number.long_indirect
+  end
 end
 
 ; Extends the compiler scope
@@ -103,16 +119,23 @@ module Snes65816
     macro sr
     end
 
-    macro dp
+    macro dp(opcode, value)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db value
     end
 
     macro ildp
     end
 
-    macro long
+    macro long(opcode, value)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.dw value & $FFFF
+      Compiler.current_scope.db value >> 16
     end
 
-    macro relb
+    macro relb(opcode, address)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db address - Compiler.current_scope.PC - 1
     end
 
     macro idpy
@@ -130,10 +153,14 @@ module Snes65816
     macro ildpy
     end
 
-    macro addry
+    macro addry(opcode, address)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.dw address
     end
 
-    macro addrx
+    macro addrx(opcode, address)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.dw address
     end
 
     macro longx
@@ -145,13 +172,12 @@ module Snes65816
     macro relw
     end
 
-    macro relb
-    end
-
     macro dpy
     end
 
-    macro iaddrx
+    macro iaddrx(opcode, address)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.dw address
     end
 
     macro impl(opcode)
@@ -214,12 +240,37 @@ module Snes65816
     return {type: :addr, number: number} if number.is_a? Number
 
     if number.is_a? TypedNumber
+      typed_number = number
       type = number.type
       number = number.number
 
       case type
       when :constant
         return {type: :constant, number: number}
+
+      when :direct_page
+        return {type: :dp, number: number}
+
+      when :long_address
+        if number.is_a? TypedNumber
+          inner = normalize_opcode_number(number)
+          return {type: "long_#{inner.type}", number: inner.number}
+        else
+          return {type: :long, number: number}
+        end
+
+      when :indirect
+        if typed_number.parameter.nil?
+          return {type: :indirect, number: number}
+        elsif typed_number.parameter.X?
+          return {type: :indirect_x, number: number}
+        elsif typed_number.parameter.S?
+          return {type: :indirect_s, number: number}
+        elsif typed_number.parameter.Y?
+          return {type: :indirect_y, number: number}
+        else
+          raise "Unknown number type for opcode (INDIRECT)"
+        end
 
       else
         raise "Unknown number type for opcode"
@@ -242,15 +293,21 @@ module Snes65816
     call_arguments = [left.number] if right.number.nil?
     call_arguments = [] if left.number.nil?
 
-    type = "#{left.type}_#{right.type}"
+    type = "#{left.type}__#{right.type}"
 
     case type
-    when :none_none
+    when :none__none
       call_type = [:impl]
-    when :constant_none
+    when :constant__none
       call_type = [:im]
-    when :addr_none
+    when :addr__none
       call_type = [:addr, :addr_pc, :relb]
+    when :long__none
+      call_type = [:long]
+    when :dp__none
+      call_type = [:dp]
+    when :indirect_x__none
+      call_type = [:iaddrx]
     else
       raise "Unexpected parameter type: #{type}"
     end
@@ -373,6 +430,33 @@ macro declare(name, as, in, bank=nil, at=nil, length=nil, align=0)
   ram
 end
 
+;; Future number
+class FutureNumber
+
+  ;; Mark this number to be DP
+  macro dp
+    TypedNumber.new self, :direct_page
+  end
+
+  ;; Marks this number to be a long address
+  macro long_address
+    TypedNumber.new self, :long_address
+  end
+
+  ;; Mark this number to be DP
+  macro indirect(parameter=nil)
+    num = TypedNumber.new self, :indirect
+    num.parameter = parameter
+    num
+  end
+
+  ;; Marks this number to be a long address
+  macro long_indirect(parameter=nil)
+    self.indirect(parameter).long_address
+  end
+
+end
+
 ;; Extends the number class to support ASM core handling
 class Number
 
@@ -384,6 +468,18 @@ class Number
   ;; Marks this number to be a long address
   macro long_address
     TypedNumber.new self, :long_address
+  end
+
+  ;; Mark this number to be DP
+  macro indirect(parameter=nil)
+    num = TypedNumber.new self, :indirect
+    num.parameter = parameter
+    num
+  end
+
+  ;; Marks this number to be a long address
+  macro long_indirect(parameter=nil)
+    self.indirect(parameter).long_address
   end
 
   ;; Returns the address of this number without the bank
@@ -413,28 +509,51 @@ S = Snes65816::Register.new "S"
 ;; Support dp(number) syntax
 macro dp(number)
   number.dp
-  number
 end
 
-;; Decorator for location
+;; Indirect
+macro indirect(number, parameter=nil)
+  number.indirect(parameter)
+end
+
+;; Indirect
+macro long_indirect(number, parameter=nil)
+  number.indirect(parameter)
+end
+
+;; Sets the location of all functions
 macro @locate_at(**kwargs)
   Snes65816.locate_at **kwargs
 
   yield
 end
 
+;; Sets the size of all functions
+macro @register(A=nil, XY=nil)
+  ::A.set_size A unless A.nil?
+  ::X.set_size XY unless XY.nil?
+
+  yield
+end
+
 ;; Memory block declaration
-macro memory_block(name=nil, **kwargs)
-  Compiler.define name do
+macro memory_block(as=nil, name=nil, **kwargs)
+  var = Compiler.define name do
     Snes65816.locate_at **kwargs
 
     yield Compiler.current_scope
 
     Compiler.current_scope.is_return_opcode = true
   end
+
+  callee[as] = var.to_future_number unless as.nil?
+  var.to_future_number
 end
 
-Snes65816.operator $00, :BRK, :impl
+Snes65816.operator $00, :BRK, :impl do |opcode|
+  Compiler.current_scope.db opcode
+  Compiler.current_scope.db 0
+end
 Snes65816.operator $01, :ora, :IDPX
 Snes65816.operator $02, :cop, :IM
 Snes65816.operator $03, :ora, :SR
@@ -511,7 +630,12 @@ Snes65816.operator $48, :pha, :IMPL
 
 Snes65816.operator $4a, :lsr, :IMPL
 Snes65816.operator $4b, :phk, :IMPL
-
+Snes65816.operator $4c, :JMP, :addr do |opcode, address|
+  Compiler.current_scope.size_hint_function address
+  Compiler.current_scope.db opcode
+  Compiler.current_scope.dw address & $FFFF
+  Compiler.current_scope.is_return_opcode = true
+end
 Snes65816.operator $4d, :eor, :ADDR
 Snes65816.operator $4e, :lsr, :ADDR
 Snes65816.operator $4f, :eor, :LONG
@@ -585,6 +709,8 @@ Snes65816.operator $7f, :adc, :LONGX
 Snes65816.operator $80, :bra, :relb do |opcode, address|
   Compiler.current_scope.db opcode
   Compiler.current_scope.db address - Compiler.current_scope.PC - 1
+
+  Compiler.current_scope.is_return_opcode = true
 end
 Snes65816.operator $81, :sta, :IDPX
 
@@ -692,6 +818,7 @@ Snes65816.operator $cd, :cmp, :ADDR
 Snes65816.operator $ce, :dec, :ADDR
 Snes65816.operator $cf, :cmp, :LONG
 Snes65816.operator $d0, :bne, :RELB
+Snes65816.operator $d0, :bnz, :RELB
 Snes65816.operator $d1, :cmp, :IDPY
 Snes65816.operator $d2, :cmp, :IDP
 Snes65816.operator $d3, :cmp, :ISRY
@@ -729,6 +856,7 @@ Snes65816.operator $ed, :sbc, :ADDR
 Snes65816.operator $ee, :inc, :ADDR
 Snes65816.operator $ef, :sbc, :LONG
 Snes65816.operator $f0, :beq, :RELB
+Snes65816.operator $f0, :bze, :RELB
 Snes65816.operator $f1, :sbc, :IDPY
 Snes65816.operator $f2, :sbc, :IDP
 Snes65816.operator $f3, :sbc, :ISRY

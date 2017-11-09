@@ -1,0 +1,39 @@
+Instructions
+============
+
+There are some changes between common assemblers and FMA when calling
+instructions, due to the syntax of the language.
+
+This table gives you a quick overview about how to call instructions:
+
+|===
+| Mode | Assembler example | FMA example
+
+| Implied | `NOP` | `NOP`
+| Immediate | `LDA #123` | `LDA #123`
+| Relative | `BEQ somewhere` | `BEQ somewhere`
+| Relative long | `BRL somewhere` | `BRL somewhere`
+| Direct | `AND address` | `AND address.dp` or `AND dp(address)`
+| Direct indexed with X | `AND address, X` | `AND address.dp, X` or `AND dp(address), X`
+| Direct indexed with Y | `AND address, Y` | `AND address.dp, Y` or `AND dp(address), Y`
+| Direct indirect | `AND (address)` | `AND indirect(address)`
+| Direct indexed indirect | `AND (address, X)` | `AND indirect(address, X)`
+| Direct indirect indexed | `AND (address), Y` | `AND (address), Y`
+| Direct indirect long | `AND [address]` | `AND long_indirect(address)`
+| Direct indirect indexed long | `AND [address], Y` | `AND long_indirect(address), Y`
+| Absolute | `AND address` | `AND address`
+| Absolute indexed with X | `AND address, X` | `AND address, X`
+| Absolute indexed with Y | `AND address, Y` | `AND address, Y`
+| Absolute long | `AND address` | `AND address.long_address`
+| Absolute indexed long | `AND address, X` | `AND address.long_address, X`
+| Stack relative | `AND address, S` | `AND address, S`
+| Stack relative indirect indexed | `AND (address, S), Y` | `AND indirect(address, S), Y`
+| Absolute indirect | `JMP (address)` | `AND indirect(address)`
+| Absolute indirect long | `JML [address]` | `AND long_indirect(address)`
+| Absolute indexed indirect | `JMP (address, X)` | `AND indirect(address, X)`
+| Implied accumulator | `INC` | `INC` or `INC A`
+| Block move | `MVN bank, bank` | `MVN bank, bank`
+|===
+
+For a full list of all instructions take a look at any 65816 reference. A great
+one can be found at the SNES dev wiki: https://wiki.superfamicom.org/

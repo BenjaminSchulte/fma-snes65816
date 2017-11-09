@@ -1,6 +1,6 @@
 {
   "name": "fma-snes65816",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "SNES 65816 assembler backend for FMA",
   "main": "dist/index.js",
   "keywords": ["snes", "famicom", "macro", "assembler", "compiler", "nintendo"],

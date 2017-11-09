@@ -1,0 +1,23 @@
+FMA SNES 65816
+==============
+
+SNES 65816 assembler plugin for FMA assembler.
+
+
+== Installation
+
+This package can be used with the https://github.com/BenjaminSchulte/fma[FMA] assembler.
+For a quick start simply install the https://github.com/BenjaminSchulte/fma-cli[CLI application].
+
+
+== Usage
+
+* link:./docs/index.adoc[Documentation]
+
+Some useful tips how to get started with SNES development can be found in
+this wiki: https://wiki.superfamicom.org/
+
+
+== License
+
+FMA is licensed with the link:./LICENSE.md[MIT] license. Author: Benjamin Schulte

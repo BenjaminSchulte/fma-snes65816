@@ -1,0 +1,8 @@
+FMA SNES 65816
+==============
+
+This documentation explains the main features of this package.
+
+* link:./registers.adoc[Registers] - The ASM registers
+* link:./instructions.adoc[Instructions] - Call ASM instructions in FMA
+* Memory management (To be written) - Allocate variables and other
