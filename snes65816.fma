@@ -430,6 +430,25 @@ macro declare(name, as, in, bank=nil, at=nil, length=nil, align=0)
   ram
 end
 
+;; Object
+class Object
+  macro A?
+    false
+  end
+
+  macro X?
+    false
+  end
+
+  macro Y?
+    false
+  end
+
+  macro S?
+    false
+  end
+end
+
 ;; Future number
 class FutureNumber
 
@@ -524,6 +543,19 @@ end
 ;; Sets the location of all functions
 macro @locate_at(**kwargs)
   Snes65816.locate_at **kwargs
+
+  yield
+end
+
+;; Tests registers
+macro @requires(A=nil, XY=nil)
+  unless A.nil?
+    raise "Register A is required to be of size #{A}" unless ::A.size == A
+  end
+
+  unless XY.nil?
+    raise "Register X/Y is required to be of size #{XY}" unless ::X.size == XY
+  end
 
   yield
 end

@@ -50,7 +50,7 @@ state:
 
 [source,ruby]
 ----
-macro with_register_size(size)
+macro @with_register_size(size)
   return yield if A.size == size
 
   SEP $20 if size == 8
@@ -60,8 +60,10 @@ macro with_register_size(size)
   SEP $20 if size == 16
 end
 
-with_register_size 8 do
-  set_inidisp $1F
+@with_register_size 8
+macro set_inidisp(value)
+  LDA #value unless value.A?
+  STA $2100
 end
 
 ----
