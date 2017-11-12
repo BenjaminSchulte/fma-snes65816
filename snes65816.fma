@@ -35,12 +35,16 @@ class CompilerMemoryManager
     self.to_future_number.long_address
   end
 
-  macro indirect
-    self.to_future_number.indirect
+  macro indirect(parameter=nil)
+    self.to_future_number.indirect parameter
   end
 
-  macro long_indirect
-    self.to_future_number.long_indirect
+  macro long_indirect(parameter=nil)
+    self.to_future_number.long_indirect parameter
+  end
+
+  macro bank
+    self.to_future_number.bank
   end
 end
 
@@ -103,6 +107,47 @@ module Snes65816
       Compiler.current_scope.db value
     end
 
+    macro im_16(opcode, value)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.dw value
+    end
+
+    macro im_a(opcode, value)
+      Compiler.current_scope.db opcode
+      case A.size
+      when 8
+        Compiler.current_scope.db value
+      when 16
+        Compiler.current_scope.dw value
+      else
+        raise "Unknown register size for A"
+      end
+    end
+
+    macro im_x(opcode, value)
+      Compiler.current_scope.db opcode
+      case X.size
+      when 8
+        Compiler.current_scope.db value
+      when 16
+        Compiler.current_scope.dw value
+      else
+        raise "Unknown register size for X"
+      end
+    end
+
+    macro im_y(opcode, value)
+      Compiler.current_scope.db opcode
+      case Y.size
+      when 8
+        Compiler.current_scope.db value
+      when 16
+        Compiler.current_scope.dw value
+      else
+        raise "Unknown register size for Y"
+      end
+    end
+
     macro addr(opcode, value)
       Compiler.current_scope.db opcode
       Compiler.current_scope.dw value
@@ -124,7 +169,14 @@ module Snes65816
       Compiler.current_scope.db value
     end
 
-    macro ildp
+    macro ildp(opcode, value)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db value
+    end
+
+    macro ildpy(opcode, value)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db value
     end
 
     macro long(opcode, value)
@@ -150,9 +202,6 @@ module Snes65816
     macro dpx
     end
 
-    macro ildpy
-    end
-
     macro addry(opcode, address)
       Compiler.current_scope.db opcode
       Compiler.current_scope.dw address
@@ -163,10 +212,16 @@ module Snes65816
       Compiler.current_scope.dw address
     end
 
-    macro longx
+    macro longx(opcode, address)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.dw address & $FFFF
+      Compiler.current_scope.db address >> 16
     end
 
-    macro mv
+    macro mv(opcode, left, right)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db left
+      Compiler.current_scope.db right
     end
 
     macro relw
@@ -277,6 +332,8 @@ module Snes65816
       end
     elsif number.is_function?
       return {type: :addr, number: number}
+    elsif number.is_a? Register
+      return {type: number.name, number: nil}
     else
       return {type: :addr, number: number.to_future_number}
     end
@@ -298,14 +355,26 @@ module Snes65816
     case type
     when :none__none
       call_type = [:impl]
+    when :A__none
+      call_type = [:impl]
     when :constant__none
-      call_type = [:im]
+      call_type = [:im, :im_a, :im_x, :im_y, :im_16]
     when :addr__none
       call_type = [:addr, :addr_pc, :relb]
+    when :addr__X
+      call_type = [:addrx]
+    when :addr__addr
+      call_type = [:mv]
     when :long__none
       call_type = [:long]
+    when :long_indirect__none
+      call_type = [:ildp]
+    when :long_indirect__Y
+      call_type = [:ildpy]
     when :dp__none
       call_type = [:dp]
+    when :long__X
+      call_type = [:longx]
     when :indirect_x__none
       call_type = [:iaddrx]
     else
@@ -385,15 +454,16 @@ module Snes65816
 end
 
 ;; Allocates a new RAM scope
-macro scope(name, bank=nil, at=nil, length=nil, in=nil, shared=false, align=nil, shadows_bank=nil, shadows_address=nil)
+macro scope(name, bank=nil, at=nil, length=nil, in=Snes65816::RAM, shared=false, align=nil, shadows_bank=nil, shadows_address=nil)
   address_range = nil
 
   if in.nil?
-    in = Snes65816::RAM
+    ram = Snes65816::RAM.allocate
+    ram.detach
+  else
+    ram = in.allocate
   end
-
-  ram = in.allocate
-  ram.shared = shared
+  ram.set_is_shared shared
 
   unless bank.nil? && at.nil? && align.nil?
     ram.allow bank: bank, at: at, align: align
@@ -415,9 +485,17 @@ macro scope(name, bank=nil, at=nil, length=nil, in=nil, shared=false, align=nil,
 end
 
 ;; Declares a variable
-macro declare(name, as, in, bank=nil, at=nil, length=nil, align=0)
+macro declare(name, as, in=nil, bank=nil, at=nil, length=nil)
+  if callee.is_a? Class
+    callee.on_initialize_members do |in|
+      self[name] = declare name, as, in, bank, at, length
+    end
+    return
+  end
+
+  raise "Missing argument for declare: in" if in.nil?
+
   ram = in.allocate
-  ram.align = 0
 
   unless bank.nil? && at.nil?
     ram.allow bank: bank, at: at
@@ -471,7 +549,17 @@ class FutureNumber
 
   ;; Marks this number to be a long address
   macro long_indirect(parameter=nil)
-    self.indirect(parameter).long_address
+    TypedNumber.new self.indirect(parameter), :long_address
+  end
+
+  ;; Returns the address of this number without the bank
+  macro address
+    self & $FFFF
+  end
+
+  ;; Returns the bank of this number
+  macro bank
+    (self >> 16) & $FF
   end
 
 end
@@ -537,7 +625,7 @@ end
 
 ;; Indirect
 macro long_indirect(number, parameter=nil)
-  number.indirect(parameter)
+  number.long_indirect(parameter)
 end
 
 ;; Sets the location of all functions
@@ -624,7 +712,7 @@ Snes65816.operator $25, :and, :DP
 Snes65816.operator $26, :rol, :DP
 Snes65816.operator $27, :and, :ILDP
 
-
+Snes65816.operator $29, :AND, :im_a
 Snes65816.operator $2a, :rol, :IMPL
 Snes65816.operator $2b, :pld, :IMPL
 Snes65816.operator $2c, :bit, :ADDR
@@ -716,7 +804,7 @@ Snes65816.operator $65, :adc, :DP
 Snes65816.operator $66, :ror, :DP
 Snes65816.operator $67, :adc, :ILDP
 Snes65816.operator $68, :pla, :IMPL
-
+Snes65816.operator $a0, :ADC, :im_a
 Snes65816.operator $6a, :ror, :IMPL
 Snes65816.operator $6d, :adc, :ADDR
 
@@ -775,36 +863,16 @@ Snes65816.operator $9c, :stz, :ADDR
 Snes65816.operator $9d, :sta, :ADDRX
 Snes65816.operator $9e, :stz, :ADDRX
 Snes65816.operator $9f, :sta, :LONGX
-
+Snes65816.operator $a0, :LDY, :im_y
 Snes65816.operator $a1, :lda, :IDPX
-Snes65816.operator $a2, :LDX, :im do |opcode, value|
-  Compiler.current_scope.db opcode
-  case X.size
-  when 8
-    Compiler.current_scope.db value
-  when 16
-    Compiler.current_scope.dw value
-  else
-    raise "Unknown register size for X"
-  end
-end
+Snes65816.operator $a2, :LDX, :im_x
 Snes65816.operator $a3, :lda, :SR
 Snes65816.operator $a4, :ldy, :DP
 Snes65816.operator $a5, :lda, :DP
 Snes65816.operator $a6, :ldx, :DP
 Snes65816.operator $a7, :lda, :ILDP
 Snes65816.operator $a8, :tay, :IMPL
-Snes65816.operator $a9, :LDA, :im do |opcode, value|
-  Compiler.current_scope.db opcode
-  case A.size
-  when 8
-    Compiler.current_scope.db value
-  when 16
-    Compiler.current_scope.dw value
-  else
-    raise "Unknown register size for A"
-  end
-end
+Snes65816.operator $a9, :LDA, :im_a
 Snes65816.operator $aa, :tax, :IMPL
 Snes65816.operator $ab, :plb, :IMPL
 Snes65816.operator $ac, :ldy, :ADDR
@@ -892,7 +960,7 @@ Snes65816.operator $f0, :bze, :RELB
 Snes65816.operator $f1, :sbc, :IDPY
 Snes65816.operator $f2, :sbc, :IDP
 Snes65816.operator $f3, :sbc, :ISRY
-Snes65816.operator $f4, :pea, :IM
+Snes65816.operator $f4, :pea, :im_16
 Snes65816.operator $f5, :sbc, :DPX
 Snes65816.operator $f6, :inc, :DPX
 Snes65816.operator $f7, :sbc, :ILDPY
