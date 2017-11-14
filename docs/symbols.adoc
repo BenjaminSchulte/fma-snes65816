@@ -1,0 +1,99 @@
+Symbol file format
+==================
+
+SNES 65816 is able to generate a symbol file which contains a lot of debug
+information you can use for debugging your application.
+
+== Example file
+
+This is an example file to show the file format:
+
+[source,txt]
+----
+#SNES65816
+#
+# This is a comment
+
+[SYMBOL]
+00:2100 PPU.INIDISP VAR 2 TYPE=uint8
+C0:8000 start FUNC 10 A=8 XY=8
+C1:1234 other DATA 1F1
+
+[FILE]
+0001 /home/luigi/projects/game/main.fma
+
+[SOURCEMAP]
+C0:8000 0001 1A 2,1,4,1,2,0,0,1,2
+
+[COMMENT]
+C0:8000 "this is the main routine"
+
+[COMMAND]
+0001 "PRINT INFO hello world"
+----
+
+== Content
+
+=== Header
+
+To recognize this file the first line must always be exactly `#SNES65816`
+
+
+=== SYMBOL section
+
+The symbol section lists all known addresses of the ROM with their address and size.
+
+The main arguments are the following:
+
+* The address in HEX format: `11:2222` where `11` is the bank and `2222` is the address
+  within the bank
+* The name
+* The type, either `VAR` for variables, `FUNC` for functions, `DATA` for constant data, `ANY` for unknown data
+* The size in bytes. If you are unsure about this you can simply keep this a 1
+
+Optional arguments can be:
+
+* `TYPE` defines the type of the variable
+* `A` defines the size of the A register in bits
+* `XY` defines the size of the X and Y register in bits
+
+
+=== FILE section
+
+The file section is a list of all files used in the SOURCEMAP section.
+
+The main arguments are:
+
+* The ID of the file in HEX format
+* The full path to the file
+
+
+=== SOURCEMAP section
+
+This section defines which memory addresses matches which lines in which files
+to help finding the location of a bug quickly.
+
+The main arguments are:
+
+* The address in HEX format: `11:2222` where `11` is the bank and `2222` is the address
+  within the bank
+* The ID of the file in HEX format
+* the number of the first line
+* A command separated list of opcode sizes per line. Each number describes how many bytes
+  the instruction of the current line contains.
+
+
+=== COMMENT section
+
+Allows to add comments to specific memory addresses
+
+The main arguments are:
+
+* The address in HEX format: `11:2222` where `11` is the bank and `2222` is the address
+  within the bank
+* The comment itself
+
+=== COMMAND section
+
+This section lists all commands which can be executed by the debugger using the
+DEBUG register in address `$420E`

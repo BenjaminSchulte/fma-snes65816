@@ -190,7 +190,9 @@ module Snes65816
       Compiler.current_scope.db address - Compiler.current_scope.PC - 1
     end
 
-    macro idpy
+    macro idpy(opcode, address)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db address
     end
 
     macro idp
@@ -220,8 +222,8 @@ module Snes65816
 
     macro mv(opcode, left, right)
       Compiler.current_scope.db opcode
-      Compiler.current_scope.db left
       Compiler.current_scope.db right
+      Compiler.current_scope.db left
     end
 
     macro relw
@@ -377,6 +379,8 @@ module Snes65816
       call_type = [:longx]
     when :indirect_x__none
       call_type = [:iaddrx]
+    when :indirect__Y
+      call_type = [:idpy]
     else
       raise "Unexpected parameter type: #{type}"
     end
@@ -804,7 +808,7 @@ Snes65816.operator $65, :adc, :DP
 Snes65816.operator $66, :ror, :DP
 Snes65816.operator $67, :adc, :ILDP
 Snes65816.operator $68, :pla, :IMPL
-Snes65816.operator $a0, :ADC, :im_a
+Snes65816.operator $69, :ADC, :im_a
 Snes65816.operator $6a, :ror, :IMPL
 Snes65816.operator $6d, :adc, :ADDR
 
