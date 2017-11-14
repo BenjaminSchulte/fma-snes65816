@@ -201,7 +201,9 @@ module Snes65816
     macro isry
     end
 
-    macro dpx
+    macro dpx(opcode, address)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db address
     end
 
     macro addry(opcode, address)
@@ -229,7 +231,9 @@ module Snes65816
     macro relw
     end
 
-    macro dpy
+    macro dpy(opcode, address)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db address
     end
 
     macro iaddrx(opcode, address)
@@ -365,6 +369,8 @@ module Snes65816
       call_type = [:addr, :addr_pc, :relb]
     when :addr__X
       call_type = [:addrx]
+    when :addr__Y
+      call_type = [:addry]
     when :addr__addr
       call_type = [:mv]
     when :long__none
@@ -375,6 +381,10 @@ module Snes65816
       call_type = [:ildpy]
     when :dp__none
       call_type = [:dp]
+    when :dp__X
+      call_type = [:dpx]
+    when :dp__Y
+      call_type = [:dpy]
     when :long__X
       call_type = [:longx]
     when :indirect_x__none
@@ -685,6 +695,8 @@ Snes65816.operator $04, :tsb, :DP
 Snes65816.operator $05, :ora, :DP
 Snes65816.operator $06, :asl, :DP
 Snes65816.operator $07, :ora, :ILDP
+
+Snes65816.operator $09, :ora, :im_a
 Snes65816.operator $0a, :asl, :IMPL
 Snes65816.operator $0b, :phd, :IMPL
 Snes65816.operator $0c, :tsb, :ADDR
@@ -751,7 +763,7 @@ Snes65816.operator $45, :eor, :DP
 Snes65816.operator $46, :lsr, :DP
 Snes65816.operator $47, :eor, :ILDP
 Snes65816.operator $48, :pha, :IMPL
-
+Snes65816.operator $49, :eor, :im_a
 Snes65816.operator $4a, :lsr, :IMPL
 Snes65816.operator $4b, :phk, :IMPL
 Snes65816.operator $4c, :JMP, :addr do |opcode, address|
@@ -837,14 +849,19 @@ Snes65816.operator $80, :bra, :relb do |opcode, address|
   Compiler.current_scope.is_return_opcode = true
 end
 Snes65816.operator $81, :sta, :IDPX
+Snes65816.operator $82, :brl, :relw do |opcode, address|
+  Compiler.current_scope.db opcode
+  Compiler.current_scope.dw address - Compiler.current_scope.PC - 1
 
+  Compiler.current_scope.is_return_opcode = true
+end
 Snes65816.operator $83, :sta, :SR
 Snes65816.operator $84, :sty, :DP
 Snes65816.operator $85, :sta, :DP
 Snes65816.operator $86, :stx, :DP
 Snes65816.operator $87, :sta, :ILDP
 Snes65816.operator $88, :dey, :IMPL
-
+Snes65816.operator $89, :bit, :IM_A
 Snes65816.operator $8a, :txa, :IMPL
 Snes65816.operator $8b, :phb, :IMPL
 Snes65816.operator $8c, :sty, :ADDR
@@ -852,6 +869,7 @@ Snes65816.operator $8d, :sta, :ADDR
 Snes65816.operator $8e, :stx, :ADDR
 Snes65816.operator $8f, :sta, :LONG
 Snes65816.operator $90, :bcc, :RELB
+Snes65816.operator $90, :blt, :RELB
 Snes65816.operator $91, :sta, :IDPY
 Snes65816.operator $92, :sta, :IDP
 Snes65816.operator $93, :sta, :ISRY
@@ -899,7 +917,7 @@ Snes65816.operator $bc, :ldy, :ADDRX
 Snes65816.operator $bd, :lda, :ADDRX
 Snes65816.operator $be, :ldx, :ADDRY
 Snes65816.operator $bf, :lda, :LONGX
-
+Snes65816.operator $c0, :CPY, :IM_Y
 Snes65816.operator $c1, :cmp, :IDPX
 Snes65816.operator $c2, :REP, :im do |opcode, value|
   Compiler.current_scope.set_size :XY, 16 if value & $10
@@ -914,7 +932,7 @@ Snes65816.operator $c5, :cmp, :DP
 Snes65816.operator $c6, :dec, :DP
 Snes65816.operator $c7, :cmp, :ILDP
 Snes65816.operator $c8, :iny, :IMPL
-
+Snes65816.operator $c9, :cmp, :im_a
 Snes65816.operator $ca, :dex, :IMPL
 Snes65816.operator $cb, :wai, :IMPL
 Snes65816.operator $cc, :cpy, :ADDR
@@ -937,7 +955,7 @@ Snes65816.operator $db, :stp, :IMPL
 Snes65816.operator $dd, :cmp, :ADDRX
 Snes65816.operator $de, :dec, :ADDRX
 Snes65816.operator $df, :cmp, :LONGX
-
+Snes65816.operator $e0, :cpx, :IM_X
 Snes65816.operator $e1, :sbc, :IDPX
 Snes65816.operator $e2, :sep, :im do |opcode, value|
   Compiler.current_scope.set_size :XY, 8 if value & $10
@@ -953,6 +971,7 @@ Snes65816.operator $e5, :sbc, :DP
 Snes65816.operator $e6, :inc, :DP
 Snes65816.operator $e7, :sbc, :ILDP
 Snes65816.operator $e8, :inx, :IMPL
+Snes65816.operator $e9, :sbc, :im_a
 Snes65816.operator $ea, :nop, :IMPL
 Snes65816.operator $eb, :xba, :IMPL
 Snes65816.operator $ec, :cpx, :ADDR
