@@ -161,7 +161,9 @@ module Snes65816
     macro idpx
     end
 
-    macro sr
+    macro sr(opcode, value)
+      Compiler.current_scope.db opcode
+      Compiler.current_scope.db value
     end
 
     macro dp(opcode, value)
@@ -369,6 +371,8 @@ module Snes65816
       call_type = [:addr, :addr_pc, :relb]
     when :addr__X
       call_type = [:addrx]
+    when :addr__S
+      call_type = [:sr]
     when :addr__Y
       call_type = [:addry]
     when :addr__addr
@@ -504,6 +508,7 @@ macro declare(name, as, in=nil, bank=nil, at=nil, length=nil)
     callee.on_initialize_members do |in|
       self[name] = declare name, as, in, bank, at, length
     end
+    callee.register_variable_offset name, as, length
     return
   end
 
@@ -902,6 +907,7 @@ Snes65816.operator $ad, :lda, :ADDR
 Snes65816.operator $ae, :ldx, :ADDR
 Snes65816.operator $af, :lda, :LONG
 Snes65816.operator $b0, :bcs, :RELB
+Snes65816.operator $b0, :bge, :RELB
 Snes65816.operator $b1, :lda, :IDPY
 Snes65816.operator $b2, :lda, :IDP
 Snes65816.operator $b3, :lda, :ISRY
