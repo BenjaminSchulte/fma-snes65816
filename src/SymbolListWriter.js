@@ -22,8 +22,16 @@ export default class SymbolListWriter {
       result.push(`${pad.substr(0,2-bank.length)}${bank}:${pad.substr(0,4-address.length)}${address} ${name} ANY 1`);
     }
 
-    result.push('')
+    if (this.commands.allConfigurations().length) {
+      result.push('')
+      result.push('[CONFIG]');
+      for (let config of this.commands.allConfigurations()) {
+        result.push(config);
+      }
+    }
+
     if (this.commands.all().length) {
+      result.push('')
       result.push('[COMMAND]');
 
       var index = 0;
