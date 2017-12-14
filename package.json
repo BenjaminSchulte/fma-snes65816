@@ -3,7 +3,14 @@
   "version": "0.5.6",
   "description": "SNES 65816 assembler backend for FMA",
   "main": "dist/index.js",
-  "keywords": ["snes", "famicom", "macro", "assembler", "compiler", "nintendo"],
+  "keywords": [
+    "snes",
+    "famicom",
+    "macro",
+    "assembler",
+    "compiler",
+    "nintendo"
+  ],
   "scripts": {
     "prepublish": "npm run build",
     "build": "node_modules/babel-cli/bin/babel.js src --source-maps --out-dir ./dist"
