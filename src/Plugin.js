@@ -1,5 +1,6 @@
 import {Parser, Plugin as CorePlugin} from 'fma';
 import Assembler from './Assembler';
+import InstructionCompiler from './InstructionCompiler';
 import path from 'path';
 
 export default class Plugin extends CorePlugin {
@@ -20,6 +21,9 @@ export default class Plugin extends CorePlugin {
   }
 
   preProcess(project, interpreter) {
+    const instructions = new InstructionCompiler();
+    instructions.implementTo(project, interpreter)
+
     this.compileAssembler(project, interpreter);
   }
 
