@@ -191,7 +191,7 @@ export default class InstructionCompiler {
     collection.add("adc", 0x79, InstructionType.addry());
     collection.add("ply", 0x7a, InstructionType.impl());
     collection.add("tdc", 0x7b, InstructionType.impl());
-
+    collection.add("jmp", 0x7c, InstructionType.iaddrx());
     collection.add("adc", 0x7d, InstructionType.addrx());
     collection.add("ror", 0x7e, InstructionType.addrx());
     collection.add("adc", 0x7f, InstructionType.longx());

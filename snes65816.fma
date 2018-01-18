@@ -688,3 +688,28 @@ macro memory_block(as=nil, name=nil, **kwargs)
   callee[as] = var.to_future_number unless as.nil?
   var.to_future_number
 end
+
+class __RoutineList
+  macro initialize(a, xy)
+    self.a = a
+    self.xy = xy
+  end
+
+  macro add(addr)
+    addr.register_size_A = self.a unless self.a.nil?
+    addr.register_size_XY = self.xy unless self.xy.nil?
+    Compiler.current_scope.dw addr
+  end
+end
+
+;; Creates a list of routines
+macro routine_list(as=nil, name=nil, A=nil, XY=nil, **kwargs)
+  var = Compiler.define name do
+    Snes65816.locate_at **kwargs
+    yield __RoutineList.new(A, XY)
+    Compiler.current_scope.is_return_opcode = true
+  end
+
+  callee[as] = var.to_future_number unless as.nil?
+  var.to_future_number
+end
