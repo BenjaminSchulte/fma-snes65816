@@ -1,3 +1,4 @@
+export default `
 ; Extends the memory manager for some core functions
 class CompilerMemoryManager
   macro allow(bank=nil, at=nil, range=nil, align=nil, located_at=nil)
@@ -421,7 +422,7 @@ module Snes65816
     name = name.upcase
     type = type.downcase
 
-    macro ::\{name} *args
+    macro ::\\{name} *args
       call_opcode name, *args
     end
 
@@ -713,3 +714,4 @@ macro routine_list(as=nil, name=nil, A=nil, XY=nil, **kwargs)
   callee[as] = var.to_future_number unless as.nil?
   var.to_future_number
 end
+`;

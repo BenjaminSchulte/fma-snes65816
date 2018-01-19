@@ -2,6 +2,7 @@ import {Parser, Plugin as CorePlugin} from 'fma';
 import Assembler from './Assembler';
 import InstructionCompiler from './InstructionCompiler';
 import path from 'path';
+import FMA_INIT from './snes65816';
 
 export default class Plugin extends CorePlugin {
   constructor() {
@@ -16,7 +17,7 @@ export default class Plugin extends CorePlugin {
 
   compileAssembler(project, interpreter) {
     const parser = new Parser(project);
-    const program = parser.parseFile(path.join(__dirname, '..', 'snes65816.fma'));
+    const program = parser.parseString(FMA_INIT);
     interpreter.process(program);
   }
 
