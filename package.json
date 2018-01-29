@@ -1,6 +1,6 @@
 {
   "name": "fma-snes65816",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "SNES 65816 assembler backend for FMA",
   "main": "dist/index.js",
   "keywords": [
@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "babel-runtime": "^6.26.0",
-    "fma": "^0.3.0"
+    "fma": "^0.3.1"
   },
   "repository": {
     "type": "git",

@@ -473,7 +473,7 @@ module Snes65816
 end
 
 ;; Allocates a new RAM scope
-macro scope(name, bank=nil, at=nil, length=nil, in=Snes65816::RAM, shared=false, align=nil, shadows_bank=nil, shadows_address=nil)
+macro scope(name, bank=nil, at=nil, length=nil, in=Snes65816::RAM, shared=false, align=nil, shadows_bank=nil, shadows_address=nil, dump_usage=false)
   address_range = nil
 
   if in.nil?
@@ -483,6 +483,7 @@ macro scope(name, bank=nil, at=nil, length=nil, in=Snes65816::RAM, shared=false,
     ram = in.allocate
   end
   ram.set_is_shared shared
+  ram.set_dump_usage dump_usage
 
   unless bank.nil? && at.nil? && align.nil?
     ram.allow bank: bank, at: at, align: align
