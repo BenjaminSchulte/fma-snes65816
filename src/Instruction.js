@@ -152,6 +152,18 @@ export default class Instruction {
     this.alternatives = {}
   }
 
+  static getCounter() {
+    return Instruction.counter[0] || null;
+  }
+
+  static pushCounter(counter) {
+    Instruction.counter.unshift(counter);
+  }
+
+  static popCounter() {
+    return Instruction.counter.shift();
+  }
+
   add(type, opcode, callback) {
     if (!this.alternatives.hasOwnProperty(type.p1)) {
       this.alternatives[type.p1] = {}
@@ -174,7 +186,13 @@ export default class Instruction {
 
     scope.setMember('is_return_opcode', new BooleanObject(false));
 
+    const counter = Instruction.getCounter();
     const code = new Code(scope.block.code);
+
+    if (counter) {
+      counter.add(opcode);
+    }
+
     type.writer(scope, code, opcode, p1, p2, context);
 
     if (callback) {
@@ -205,3 +223,5 @@ export default class Instruction {
     return macro;
   }
 }
+
+Instruction.counter = [];

@@ -61,6 +61,7 @@ class CompilerScope
     end
 
     Compiler.current_scope.is_return_opcode = false
+    Compiler.current_scope.current_function = function.name
   end
 
   macro on_leave_function(function)

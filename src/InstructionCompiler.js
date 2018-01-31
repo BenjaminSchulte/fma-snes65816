@@ -1,6 +1,7 @@
 import InstructionType from './InstructionType';
 import Instruction from './Instruction';
-import {BooleanObject, InternalValue} from 'fma';
+import InstructionTickCounter from './InstructionTickCounter';
+import {MacroObject, ArgumentList, BooleanObject, InternalValue} from 'fma';
 
 class InstructionCollection {
   constructor() {
@@ -175,6 +176,8 @@ export default class InstructionCompiler {
     collection.add("pla", 0x68, InstructionType.impl());
     collection.add("ADC", 0x69, InstructionType.im_a());
     collection.add("ror", 0x6a, InstructionType.impl());
+    collection.add("rtl", 0x6b, InstructionType.impl(), (...args) => { this.setReturnOpcode(...args); });
+
     collection.add("adc", 0x6d, InstructionType.addr());
 
     collection.add("ror", 0x6e, InstructionType.addr());
@@ -349,5 +352,27 @@ export default class InstructionCompiler {
     collection.add("sbc", 0xff, InstructionType.longx());
 
     collection.compile(project, interpreter)
+
+    this.createCallback(interpreter, 'SNES65816_start_instruction_counter', [], (context, self) => {
+      Instruction.pushCounter(new InstructionTickCounter());
+    })
+    this.createCallback(interpreter, 'SNES65816_end_instruction_counter', [], (context, self) => {
+      const oldCounter = Instruction.popCounter();
+      const counter = Instruction.getCounter();
+      if (counter) {
+        counter.addDirect(counter.get());
+      }
+      return this.createNumber(context, oldCounter.get());
+    })
+  }
+
+  createCallback(interpreter, name, argList, callback) {
+    const macro = new MacroObject(name);
+    const args = new ArgumentList();
+    args.buildFromStringList(argList);
+    macro.setArguments(args);
+    macro.setCallback(callback)
+
+    interpreter.getRoot().setMember(name, macro);
   }
 }
