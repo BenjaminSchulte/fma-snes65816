@@ -608,7 +608,7 @@ class Number
 
   ;; Marks this number to be a long address
   macro long_indirect(parameter=nil)
-    self.indirect(parameter).long_address
+    TypedNumber.new self.indirect(parameter), :long_address
   end
 
   ;; Returns the address of this number without the bank

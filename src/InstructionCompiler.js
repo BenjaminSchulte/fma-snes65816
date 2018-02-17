@@ -101,7 +101,8 @@ export default class InstructionCompiler {
     collection.add("ora", 0x1f, InstructionType.longx());
     collection.add("jsr", 0x20, InstructionType.addr_pc());
     collection.add("and", 0x21, InstructionType.idpx());
-    collection.add("jsl", 0x22, InstructionType.long());
+    collection.add("jsl", 0x22, InstructionType.alias(InstructionType.addr(), InstructionType.long()), (...args) => { this.setSizeHint(...args); });
+    collection.add("jsl", 0x22, InstructionType.long(), (...args) => { this.setSizeHint(...args); });
     collection.add("and", 0x23, InstructionType.sr());
     collection.add("bit", 0x24, InstructionType.dp());
     collection.add("and", 0x25, InstructionType.dp());
