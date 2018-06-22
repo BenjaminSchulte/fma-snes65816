@@ -506,7 +506,7 @@ macro scope(name, bank=nil, at=nil, length=nil, in=Snes65816::RAM, shared=false,
 end
 
 ;; Declares a variable
-macro declare(name, as, in=nil, bank=nil, at=nil, length=nil)
+macro declare(name, as, in=nil, bank=nil, at=nil, length=nil, range=nil)
   if callee.is_a? Class
     callee.on_initialize_members do |in|
       self[name] = declare name, as, in, bank, at, length
@@ -519,8 +519,8 @@ macro declare(name, as, in=nil, bank=nil, at=nil, length=nil)
 
   ram = in.allocate
 
-  unless bank.nil? && at.nil?
-    ram.allow bank: bank, at: at
+  unless bank.nil? && at.nil? && range.nil?
+    ram.allow bank: bank, at: at, range: range
   end
 
   ram.set_item_type as
