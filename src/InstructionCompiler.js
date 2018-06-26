@@ -74,6 +74,7 @@ export default class InstructionCompiler {
     collection.add("ora", 0x05, InstructionType.dp());
     collection.add("asl", 0x06, InstructionType.dp());
     collection.add("ora", 0x07, InstructionType.ildp());
+    collection.add("php", 0x08, InstructionType.impl());
     collection.add("ora", 0x09, InstructionType.im_a());
     collection.add("asl", 0x0a, InstructionType.a());
     collection.add("asl", 0x0a, InstructionType.impl());
@@ -108,6 +109,7 @@ export default class InstructionCompiler {
     collection.add("and", 0x25, InstructionType.dp());
     collection.add("rol", 0x26, InstructionType.dp());
     collection.add("and", 0x27, InstructionType.ildp());
+    collection.add("plp", 0x28, InstructionType.impl());
     collection.add("AND", 0x29, InstructionType.im_a());
     collection.add("rol", 0x2a, InstructionType.impl());
     collection.add("pld", 0x2b, InstructionType.impl());
